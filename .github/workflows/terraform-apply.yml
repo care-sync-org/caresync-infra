@@ -1,0 +1,114 @@
+name: "CareSync — Infrastructure CI/CD"
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'terraform/**'
+      - 'terraform-backend/**'
+      - '.github/workflows/terraform-apply.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  terraform-plan:
+    name: "Terraform Plan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+          terraform init
+
+      - name: Terraform Validate
+        run: |
+          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+          terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+          terraform plan -no-color -out=tfplan
+          
+      - name: Save Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ github.sha }}
+          path: terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}/tfplan
+
+  approval-gate:
+    name: "Approval Gate (main only)"
+    needs: terraform-plan
+    if: github.ref_name == 'main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Environment Approval
+        run: echo "Terraform Apply approved by manager in GitHub Actions!"
+
+  terraform-apply:
+    name: "Terraform Apply"
+    needs: [terraform-plan, approval-gate]
+    if: |
+      always() &&
+      needs.terraform-plan.result == 'success' &&
+      (
+        github.ref_name == 'dev' ||
+        (github.ref_name == 'main' && needs.approval-gate.result == 'success')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+          terraform init
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ github.sha }}
+          path: terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+
+      - name: Terraform Apply
+        run: |
+          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+          terraform apply -auto-approve tfplan
