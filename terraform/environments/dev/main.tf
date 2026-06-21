@@ -99,3 +99,26 @@ module "lambda" {
   ses_from_email     = var.ses_from_email
   notification_email = var.notification_email
 }
+
+# ===========================================================================
+# MODULES — Kubernetes Cluster Bootstrap (ALB Controller + ArgoCD)
+# These modules run AFTER the EKS cluster is fully ready.
+# ===========================================================================
+
+module "alb-controller" {
+  source        = "../../modules/alb-controller"
+  cluster_name  = var.cluster_name
+  aws_region    = var.aws_region
+  vpc_id        = module.vpc.vpc_id
+  albc_role_arn = module.iam-irsa.role_arns["albc"]
+
+  depends_on = [module.eks, module.iam-irsa]
+}
+
+module "argocd" {
+  source          = "../../modules/argocd"
+  gitops_repo_url = "https://github.com/care-sync-org/caresync-gitops.git"
+  gitops_branch   = "dev"
+
+  depends_on = [module.eks, module.alb-controller]
+}

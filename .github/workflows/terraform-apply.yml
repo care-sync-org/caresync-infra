@@ -1,14 +1,8 @@
 name: Terraform Infrastructure Pipeline
 
 on:
-  push:
-    branches: [main, dev]
-    paths:
-      - 'terraform/**'
-  pull_request:
-    branches: [main, dev]
-    paths:
-      - 'terraform/**'
+  # Manually triggered only - will restore auto-trigger after Terraform changes are verified
+  workflow_dispatch:
 
 permissions:
   id-token: write # Required for AWS OIDC auth
