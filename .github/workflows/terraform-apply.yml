@@ -1,31 +1,32 @@
-name: "CareSync — Infrastructure CI/CD"
+name: Terraform Infrastructure Pipeline
 
 on:
   push:
-    branches: [dev, main]
+    branches: [main, dev]
     paths:
       - 'terraform/**'
-      - 'terraform-backend/**'
-      - '.github/workflows/terraform-apply.yml'
   pull_request:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - 'terraform/**'
-  workflow_dispatch:
 
 permissions:
-  id-token: write
+  id-token: write # Required for AWS OIDC auth
   contents: read
 
 env:
   AWS_REGION: us-east-1
 
 jobs:
-  terraform-plan:
-    name: "Terraform Plan"
+  plan:
+    name: "Terraform Validate & Plan"
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
@@ -36,54 +37,35 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9.0"
 
       - name: Terraform Init
-        run: |
-          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
-          terraform init
+        run: terraform init
 
       - name: Terraform Validate
-        run: |
-          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
-          terraform validate
+        run: terraform validate -no-color
 
       - name: Terraform Plan
-        id: plan
-        run: |
-          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
-          terraform plan -no-color -out=tfplan
-          
-      - name: Save Plan Artifact
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan-${{ github.sha }}
-          path: terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}/tfplan
+          name: tfplan
+          path: terraform/tfplan
 
-  approval-gate:
-    name: "Approval Gate (main only)"
-    needs: terraform-plan
-    if: github.ref_name == 'main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    environment: production
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for Environment Approval
-        run: echo "Terraform Apply approved by manager in GitHub Actions!"
-
-  terraform-apply:
+  apply:
     name: "Terraform Apply"
-    needs: [terraform-plan, approval-gate]
-    if: |
-      always() &&
-      needs.terraform-plan.result == 'success' &&
-      (
-        github.ref_name == 'dev' ||
-        (github.ref_name == 'main' && needs.approval-gate.result == 'success')
-      )
+    needs: plan
     runs-on: ubuntu-latest
+    # This environment name is critical. It forces the manual approval gate in GitHub.
+    environment: aws-infrastructure
+    if: github.event_name == 'push'
+    defaults:
+      run:
+        working-directory: terraform
+    
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
@@ -94,21 +76,15 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9.0"
 
       - name: Terraform Init
-        run: |
-          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
-          terraform init
+        run: terraform init
 
-      - name: Download Plan Artifact
+      - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
-          name: tfplan-${{ github.sha }}
-          path: terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+          name: tfplan
+          path: terraform
 
       - name: Terraform Apply
-        run: |
-          cd terraform/environments/${{ github.ref_name == 'main' && 'prod' || 'dev' }}
-          terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve tfplan
