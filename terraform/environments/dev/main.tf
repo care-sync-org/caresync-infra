@@ -130,12 +130,28 @@ module "alb-controller" {
   depends_on = [module.eks, module.iam-irsa]
 }
 
+resource "null_resource" "install_crds" {
+  triggers = {
+    always_run = timestamp()
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}
+      kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml
+      kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
+    EOT
+  }
+
+  depends_on = [module.eks]
+}
+
 module "argocd" {
   source          = "../../modules/argocd"
   gitops_repo_url = "https://github.com/care-sync-org/caresync-gitops.git"
   gitops_branch   = "dev"
 
-  depends_on = [module.eks, module.alb-controller]
+  depends_on = [module.eks, module.alb-controller, null_resource.install_crds]
 }
 
 module "external-dns" {
