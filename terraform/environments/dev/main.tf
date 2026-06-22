@@ -77,8 +77,8 @@ module "eks" {
   kms_key_arn        = module.kms.key_arn
   node_instance_type = "t3.medium"
   node_min_size      = 2
-  node_max_size      = 4
-  node_desired_size  = 2
+  node_max_size      = 3
+  node_desired_size  = 3
 }
 
 module "iam-irsa" {
@@ -157,4 +157,34 @@ module "external-dns" {
   cluster_name          = var.cluster_name
 
   depends_on = [module.eks, module.iam-irsa]
+}
+
+# ===========================================================================
+# Operators and Addons via Helm
+# ===========================================================================
+
+resource "helm_release" "external_secrets" {
+  name             = "external-secrets"
+  repository       = "https://charts.external-secrets.io"
+  chart            = "external-secrets"
+  namespace        = "external-secrets"
+  create_namespace = true
+  version          = "0.9.9"
+
+  depends_on = [module.eks]
+}
+
+resource "helm_release" "metrics_server" {
+  name             = "metrics-server"
+  repository       = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart            = "metrics-server"
+  namespace        = "kube-system"
+  version          = "3.12.1"
+
+  set {
+    name  = "args[0]"
+    value = "--kubelet-insecure-tls"
+  }
+
+  depends_on = [module.eks]
 }
