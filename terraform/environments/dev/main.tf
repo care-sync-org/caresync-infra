@@ -120,6 +120,12 @@ module "lambda" {
 # These modules run AFTER the EKS cluster is fully ready.
 # ===========================================================================
 
+resource "time_sleep" "wait_for_kubernetes" {
+  depends_on = [module.eks]
+
+  create_duration = "120s"
+}
+
 module "alb-controller" {
   source        = "../../modules/alb-controller"
   cluster_name  = var.cluster_name
@@ -127,7 +133,7 @@ module "alb-controller" {
   vpc_id        = module.vpc.vpc_id
   albc_role_arn = module.iam-irsa.role_arns["albc"]
 
-  depends_on = [module.eks, module.iam-irsa]
+  depends_on = [time_sleep.wait_for_kubernetes, module.iam-irsa]
 }
 
 resource "null_resource" "install_crds" {
@@ -139,7 +145,7 @@ resource "null_resource" "install_crds" {
     command = "aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name} && kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml"
   }
 
-  depends_on = [module.eks]
+  depends_on = [time_sleep.wait_for_kubernetes]
 }
 
 module "argocd" {
@@ -147,7 +153,7 @@ module "argocd" {
   gitops_repo_url = "https://github.com/care-sync-org/caresync-gitops.git"
   gitops_branch   = "dev"
 
-  depends_on = [module.eks, module.alb-controller, null_resource.install_crds]
+  depends_on = [time_sleep.wait_for_kubernetes, module.alb-controller, null_resource.install_crds]
 }
 
 module "external-dns" {
@@ -156,7 +162,7 @@ module "external-dns" {
   external_dns_role_arn = module.iam-irsa.role_arns["external_dns"]
   cluster_name          = var.cluster_name
 
-  depends_on = [module.eks, module.iam-irsa]
+  depends_on = [time_sleep.wait_for_kubernetes, module.iam-irsa]
 }
 
 # ===========================================================================
@@ -176,7 +182,7 @@ resource "helm_release" "external_secrets" {
     value = "true"
   }
 
-  depends_on = [module.eks]
+  depends_on = [time_sleep.wait_for_kubernetes]
 }
 
 resource "helm_release" "metrics_server" {
@@ -191,5 +197,5 @@ resource "helm_release" "metrics_server" {
     value = "--kubelet-insecure-tls"
   }
 
-  depends_on = [module.eks]
+  depends_on = [time_sleep.wait_for_kubernetes]
 }
