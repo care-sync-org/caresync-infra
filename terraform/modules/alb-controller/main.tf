@@ -4,10 +4,6 @@
 # The IAM role is created by the iam-irsa module and passed in here.
 # =============================================================================
 
-variable "cluster_name"       { type = string }
-variable "aws_region"         { type = string }
-variable "vpc_id"             { type = string }
-variable "albc_role_arn"      { type = string }
 
 # -----------------------------------------------------------------------------
 # Create the kube-system namespace (already exists in EKS but Terraform needs

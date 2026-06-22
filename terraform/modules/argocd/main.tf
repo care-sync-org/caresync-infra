@@ -4,9 +4,6 @@
 # resource to bootstrap the full GitOps loop automatically.
 # =============================================================================
 
-variable "gitops_repo_url"   { type = string }
-variable "gitops_branch"     { type = string  default = "dev" }
-variable "argocd_version"    { type = string  default = "7.3.11" }
 
 # -----------------------------------------------------------------------------
 # Step 1: Create the argocd namespace explicitly so Terraform tracks it
@@ -102,20 +99,3 @@ resource "kubernetes_manifest" "caresync_app" {
   depends_on = [helm_release.argocd]
 }
 
-# -----------------------------------------------------------------------------
-# Output the initial ArgoCD admin password so you don't have to run kubectl
-# -----------------------------------------------------------------------------
-data "kubernetes_secret" "argocd_admin_password" {
-  metadata {
-    name      = "argocd-initial-admin-secret"
-    namespace = "argocd"
-  }
-
-  depends_on = [helm_release.argocd]
-}
-
-output "argocd_admin_password" {
-  value     = data.kubernetes_secret.argocd_admin_password.data["password"]
-  sensitive = true
-  description = "Initial ArgoCD admin password. Retrieve with: terraform output -raw argocd_admin_password"
-}
