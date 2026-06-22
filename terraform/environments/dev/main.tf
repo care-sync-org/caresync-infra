@@ -53,7 +53,7 @@ module "acm" {
 
 module "secrets-manager" {
   source             = "../../modules/secrets-manager"
-  environment        = var.environment
+  environment        = "dev"
   kms_key_arn        = module.kms.key_arn
   database_url       = "postgresql://${var.db_username}:${module.rds.db_password}@${module.rds.endpoint}/caresync_dev"
   sqs_queue_url      = module.sqs.queue_url
