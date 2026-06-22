@@ -36,14 +36,29 @@ module "rds" {
   kms_key_arn         = module.kms.key_arn
 }
 
+module "route53" {
+  source       = "../../modules/route53"
+  domain_name  = "caresync-project.online"
+  project_name = "CareSync"
+  environment  = "dev"
+}
+
+module "acm" {
+  source       = "../../modules/acm"
+  domain_name  = "caresync-project.online"
+  zone_id      = module.route53.zone_id
+  project_name = "CareSync"
+  environment  = "dev"
+}
+
 module "secrets-manager" {
   source             = "../../modules/secrets-manager"
   kms_key_arn        = module.kms.key_arn
   database_url       = "postgresql://${var.db_username}:${module.rds.db_password}@${module.rds.endpoint}/caresync_dev"
   sqs_queue_url      = module.sqs.queue_url
   s3_bucket_name     = module.s3.bucket_name
-  frontend_url       = "http://k8s-caresync-caresync-cfc825078f-579067473.us-east-1.elb.amazonaws.com"
-  api_base_url       = "http://k8s-caresync-caresync-cfc825078f-579067473.us-east-1.elb.amazonaws.com/api"
+  frontend_url       = "https://caresync-project.online"
+  api_base_url       = "https://caresync-project.online/api"
   ses_from_email     = var.ses_from_email
   notification_email = var.notification_email
 }
@@ -121,4 +136,13 @@ module "argocd" {
   gitops_branch   = "dev"
 
   depends_on = [module.eks, module.alb-controller]
+}
+
+module "external-dns" {
+  source                = "../../modules/external-dns"
+  domain_filters        = ["caresync-project.online"]
+  external_dns_role_arn = module.iam-irsa.role_arns["external_dns"]
+  cluster_name          = var.cluster_name
+
+  depends_on = [module.eks, module.iam-irsa]
 }

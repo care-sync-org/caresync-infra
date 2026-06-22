@@ -19,3 +19,8 @@ output "ecr_repository_urls" {
 output "irsa_role_arns" {
   value = module.iam-irsa.role_arns
 }
+
+output "route53_nameservers" {
+  description = "Copy these 4 nameservers into GoDaddy to delegate DNS to AWS Route53"
+  value       = module.route53.name_servers
+}

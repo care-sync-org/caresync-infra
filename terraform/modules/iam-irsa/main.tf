@@ -107,3 +107,35 @@ resource "aws_iam_role_policy" "doc_service_policy" {
     ]
   })
 }
+
+# External DNS Role
+data "aws_iam_policy_document" "external_dns_assume" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [var.oidc_provider_arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${replace(var.oidc_provider_url, "https://", "")}:sub"
+      values   = ["system:serviceaccount:kube-system:external-dns"]
+    }
+  }
+}
+
+resource "aws_iam_role" "external_dns" {
+  name               = "${var.cluster_name}-external-dns-role"
+  assume_role_policy = data.aws_iam_policy_document.external_dns_assume.json
+}
+
+resource "aws_iam_policy" "external_dns_policy" {
+  name        = "${var.cluster_name}-external-dns-policy"
+  description = "IAM policy for External DNS"
+  policy      = file("${path.module}/policies/external_dns_policy.json")
+}
+
+resource "aws_iam_role_policy_attachment" "external_dns_attach" {
+  role       = aws_iam_role.external_dns.name
+  policy_arn = aws_iam_policy.external_dns_policy.arn
+}
