@@ -51,49 +51,47 @@ resource "helm_release" "argocd" {
 # This is the "root app" that tells ArgoCD to watch caresync-gitops.
 # Once applied, ArgoCD automatically deploys ALL 7 microservices.
 # -----------------------------------------------------------------------------
-resource "kubernetes_manifest" "caresync_app" {
-  manifest = {
-    apiVersion = "argoproj.io/v1alpha1"
-    kind       = "Application"
-    metadata = {
-      name       = "caresync-dev"
-      namespace  = "argocd"
-      finalizers = ["resources-finalizer.argocd.argoproj.io"]
-    }
-    spec = {
-      project = "default"
-      source = {
-        repoURL        = var.gitops_repo_url
-        targetRevision = var.gitops_branch
-        path           = "helm"
-        helm = {
-          valueFiles = ["values.yaml", "values-dev.yaml"]
-        }
-      }
-      destination = {
-        server    = "https://kubernetes.default.svc"
-        namespace = "caresync-dev"
-      }
-      syncPolicy = {
-        automated = {
-          prune    = true
-          selfHeal = true
-        }
-        syncOptions = [
-          "CreateNamespace=true",
-          "ServerSideApply=true"
-        ]
-        retry = {
-          limit = 3
-          backoff = {
-            duration    = "5s"
-            maxDuration = "3m"
-            factor      = 2
-          }
-        }
-      }
-    }
-  }
+resource "helm_release" "caresync_app" {
+  name       = "caresync-app"
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argocd-apps"
+  namespace  = kubernetes_namespace.argocd.metadata[0].name
+  version    = "1.6.2" # Using a stable version of argocd-apps
+
+  values = [
+    <<-EOT
+    applications:
+      caresync-dev:
+        namespace: argocd
+        finalizers:
+          - resources-finalizer.argocd.argoproj.io
+        project: default
+        source:
+          repoURL: ${var.gitops_repo_url}
+          targetRevision: ${var.gitops_branch}
+          path: helm
+          helm:
+            valueFiles:
+              - values.yaml
+              - values-dev.yaml
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: caresync-dev
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+            - ServerSideApply=true
+          retry:
+            limit: 3
+            backoff:
+              duration: 5s
+              factor: 2
+              maxDuration: 3m
+    EOT
+  ]
 
   # CRITICAL: ArgoCD CRDs must exist before we can create an Application resource
   depends_on = [helm_release.argocd]
