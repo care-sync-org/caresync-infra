@@ -7,7 +7,7 @@ resource "aws_route53_zone" "main" {
   comment = "${var.project_name} ${var.environment} hosted zone - managed by Terraform"
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   tags = {
