@@ -1,8 +1,8 @@
 resource "aws_secretsmanager_secret" "app" {
-  name        = "caresync/app-secrets-${random_id.id.hex}"
-  kms_key_id  = var.kms_key_arn
+  name                    = "caresync/app-secrets-${var.environment}"
+  kms_key_id              = var.kms_key_arn
+  recovery_window_in_days = 0
 }
-resource "random_id" "id" { byte_length = 4 }
 
 resource "random_password" "jwt_secret" {
   length           = 32
