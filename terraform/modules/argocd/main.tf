@@ -61,7 +61,7 @@ resource "helm_release" "caresync_app" {
   values = [
     <<-EOT
     applications:
-      caresync-dev:
+      - name: caresync-dev
         namespace: argocd
         finalizers:
           - resources-finalizer.argocd.argoproj.io
