@@ -201,6 +201,17 @@ resource "helm_release" "metrics_server" {
   depends_on = [time_sleep.wait_for_kubernetes, module.alb-controller]
 }
 
+resource "helm_release" "kgateway_crds" {
+  name             = "kgateway-crds"
+  repository       = "oci://cr.kgateway.dev/kgateway-dev/charts"
+  chart            = "kgateway-crds"
+  version          = "v2.0.1"
+  namespace        = "kube-system"
+  create_namespace = false
+
+  depends_on = [time_sleep.wait_for_kubernetes, null_resource.install_crds]
+}
+
 resource "helm_release" "kgateway" {
   name             = "kgateway"
   repository       = "oci://cr.kgateway.dev/kgateway-dev/charts"
@@ -209,10 +220,5 @@ resource "helm_release" "kgateway" {
   namespace        = "kube-system"
   create_namespace = false
 
-  set {
-    name  = "kubernetesClusterDomain"
-    value = "cluster.local"
-  }
-
-  depends_on = [time_sleep.wait_for_kubernetes, module.alb-controller, null_resource.install_crds]
+  depends_on = [helm_release.kgateway_crds, module.alb-controller]
 }
