@@ -182,7 +182,7 @@ resource "helm_release" "external_secrets" {
     value = "true"
   }
 
-  depends_on = [time_sleep.wait_for_kubernetes]
+  depends_on = [time_sleep.wait_for_kubernetes, module.alb-controller]
 }
 
 resource "helm_release" "metrics_server" {
@@ -197,5 +197,5 @@ resource "helm_release" "metrics_server" {
     value = "--kubelet-insecure-tls"
   }
 
-  depends_on = [time_sleep.wait_for_kubernetes]
+  depends_on = [time_sleep.wait_for_kubernetes, module.alb-controller]
 }
