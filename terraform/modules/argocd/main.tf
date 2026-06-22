@@ -51,6 +51,8 @@ resource "helm_release" "argocd" {
 # This is the "root app" that tells ArgoCD to watch caresync-gitops.
 # Once applied, ArgoCD automatically deploys ALL 7 microservices.
 # -----------------------------------------------------------------------------
+data "aws_caller_identity" "current" {}
+
 resource "helm_release" "caresync_app" {
   name       = "caresync-app"
   repository = "https://argoproj.github.io/argo-helm"
@@ -74,6 +76,9 @@ resource "helm_release" "caresync_app" {
             valueFiles:
               - values.yaml
               - values-dev.yaml
+            parameters:
+              - name: awsAccountId
+                value: "${data.aws_caller_identity.current.account_id}"
         destination:
           server: https://kubernetes.default.svc
           namespace: caresync-dev
