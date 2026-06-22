@@ -1,4 +1,11 @@
 
+
+locals {
+  # Strip the random 6-char suffix AWS appends to secret ARNs and replace with wildcard
+  # This ensures the policy works on every terraform destroy+apply cycle
+  secret_arn_wildcard = "${join("-", slice(split("-", var.secret_arn), 0, length(split("-", var.secret_arn)) - 1))}-*"
+}
+
 data "aws_iam_policy_document" "assume_role_policy" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -52,7 +59,7 @@ resource "aws_iam_role_policy" "eso_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      { Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = var.secret_arn },
+      { Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = local.secret_arn_wildcard },
       { Effect = "Allow", Action = ["kms:Decrypt"], Resource = var.kms_key_arn }
     ]
   })

@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Effect": "Allow",
+      "Resource": "arn:aws:secretsmanager:us-east-1:664685894054:secret:caresync/app-secrets-dev-*"
+    },
+    {
+      "Action": ["kms:Decrypt"],
+      "Effect": "Allow",
+      "Resource": "arn:aws:kms:us-east-1:664685894054:key/63fe737f-59cb-4a30-9051-cb5deb9353eb"
+    }
+  ]
+}
