@@ -136,11 +136,7 @@ resource "null_resource" "install_crds" {
   }
 
   provisioner "local-exec" {
-    command = <<-EOT
-      aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}
-      kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml
-      kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
-    EOT
+    command = "aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name} && kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml && kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml"
   }
 
   depends_on = [module.eks]
