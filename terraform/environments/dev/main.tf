@@ -170,6 +170,7 @@ resource "helm_release" "external_secrets" {
   namespace        = "external-secrets"
   create_namespace = true
   version          = "0.9.9"
+  skip_crds        = true
 
   depends_on = [module.eks]
 }
