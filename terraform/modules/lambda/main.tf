@@ -1,10 +1,15 @@
 resource "aws_sns_topic" "alerts" {
   name = "caresync-alerts"
 }
-resource "aws_sns_topic_subscription" "email" {
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "email"
-  endpoint  = var.notification_email
+resource "null_resource" "email" {
+  triggers = {
+    endpoint  = var.notification_email
+    topic_arn = aws_sns_topic.alerts.arn
+  }
+
+  provisioner "local-exec" {
+    command = "aws sns subscribe --topic-arn ${aws_sns_topic.alerts.arn} --protocol email --notification-endpoint ${var.notification_email}"
+  }
 }
 resource "aws_iam_role" "lambda_exec" {
   name = "caresync-reminder-lambda-role"

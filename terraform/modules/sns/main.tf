@@ -31,8 +31,13 @@ resource "aws_sns_topic" "alerts" {
 # Email subscription — address injected from var.alert_email (terraform.tfvars)
 # Subscription starts in PENDING_CONFIRMATION state.
 # AWS sends a confirmation email — subscriber must click the link to activate.
-resource "aws_sns_topic_subscription" "alert_email" {
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "email"
-  endpoint  = var.alert_email
+resource "null_resource" "alert_email" {
+  triggers = {
+    endpoint  = var.alert_email
+    topic_arn = aws_sns_topic.alerts.arn
+  }
+
+  provisioner "local-exec" {
+    command = "aws sns subscribe --topic-arn ${aws_sns_topic.alerts.arn} --protocol email --notification-endpoint ${var.alert_email}"
+  }
 }
