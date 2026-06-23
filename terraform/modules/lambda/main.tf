@@ -27,6 +27,7 @@ resource "aws_iam_role_policy" "lambda_policy" {
     Version = "2012-10-17",
     Statement = [
       { Effect = "Allow", Action = "secretsmanager:GetSecretValue", Resource = var.secret_arn },
+      { Effect = "Allow", Action = "kms:Decrypt", Resource = var.kms_key_arn },
       { Effect = "Allow", Action = "ses:SendEmail", Resource = "*" }
     ]
   })

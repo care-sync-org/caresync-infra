@@ -121,6 +121,7 @@ module "lambda" {
   notification_email = var.notification_email
   reminder_schedule  = var.reminder_schedule
   cluster_name       = var.cluster_name
+  kms_key_arn        = module.kms.key_arn
 }
 
 # ===========================================================================

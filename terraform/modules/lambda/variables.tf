@@ -35,3 +35,8 @@ variable "cluster_name" {
   description = "Cluster name used as a prefix for resource naming"
   type        = string
 }
+
+variable "kms_key_arn" {
+  description = "ARN of the KMS key used to encrypt Secrets Manager"
+  type        = string
+}
