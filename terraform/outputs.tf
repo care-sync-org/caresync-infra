@@ -111,10 +111,7 @@ output "lambda_reminder_name" {
   value       = module.lambda.reminder_lambda_name
 }
 
-output "lambda_cleanup_name" {
-  description = "Notification cleanup Lambda function name"
-  value       = module.lambda.cleanup_lambda_name
-}
+
 
 output "lambda_security_group_id" {
   description = "Security group ID attached to both Lambda functions"

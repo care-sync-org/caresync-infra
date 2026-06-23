@@ -219,15 +219,12 @@ module "lambda" {
 
   # CloudWatch log groups — pre-created by cloudwatch module (KMS-encrypted)
   reminder_log_group_name = module.cloudwatch.lambda_reminder_log_group_name
-  cleanup_log_group_name  = module.cloudwatch.lambda_cleanup_log_group_name
 
   # Business logic configuration
   reminder_window_hours       = 24
-  notification_retention_days = var.notification_retention_days
 
   # Scheduling (UTC) — EventBridge Scheduler cron expressions
   reminder_schedule = "rate(1 hour)"        # Hourly execution
-  cleanup_schedule  = "cron(0 2 * * ? *)"   # 02:00 UTC daily
 
   depends_on = [module.cloudwatch]
 }

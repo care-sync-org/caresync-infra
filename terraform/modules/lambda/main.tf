@@ -59,3 +59,23 @@ resource "aws_lambda_function" "appointment_reminder" {
     }
   }
 }
+
+resource "aws_cloudwatch_event_rule" "reminder_schedule" {
+  name                = "caresync-reminder-schedule"
+  description         = "Trigger the appointment reminder lambda"
+  schedule_expression = var.reminder_schedule
+}
+
+resource "aws_cloudwatch_event_target" "reminder_target" {
+  rule      = aws_cloudwatch_event_rule.reminder_schedule.name
+  target_id = "appointment-reminder-lambda"
+  arn       = aws_lambda_function.appointment_reminder.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.appointment_reminder.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.reminder_schedule.arn
+}

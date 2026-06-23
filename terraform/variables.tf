@@ -47,9 +47,3 @@ variable "alert_email" {
   description = "Email address for CloudWatch alarm SNS notifications — populated from terraform.tfvars"
   type        = string
 }
-
-variable "notification_retention_days" {
-  description = "Cleanup Lambda: delete notifications older than this many days"
-  type        = number
-  default     = 30
-}

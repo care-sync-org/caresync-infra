@@ -114,6 +114,7 @@ module "lambda" {
   secret_arn         = module.secrets-manager.secret_arn
   ses_from_email     = var.ses_from_email
   notification_email = var.notification_email
+  reminder_schedule  = "rate(1 hour)"
 }
 
 # ===========================================================================
