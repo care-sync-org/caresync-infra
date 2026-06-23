@@ -20,11 +20,15 @@ module "eks" {
       max_size     = var.node_max_size
       desired_size = var.node_desired_size
       vpc_security_group_ids = [var.node_sg_id]
+      iam_role_additional_policies = {
+        CloudWatchAgentServerPolicy = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+      }
     }
   }
   cluster_addons = {
     coredns    = { resolve_conflicts_on_create = "OVERWRITE", resolve_conflicts_on_update = "OVERWRITE" }
     vpc-cni    = { resolve_conflicts_on_create = "OVERWRITE", resolve_conflicts_on_update = "OVERWRITE" }
     kube-proxy = { resolve_conflicts_on_create = "OVERWRITE", resolve_conflicts_on_update = "OVERWRITE" }
+    amazon-cloudwatch-observability = { resolve_conflicts_on_create = "OVERWRITE", resolve_conflicts_on_update = "OVERWRITE" }
   }
 }

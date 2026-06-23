@@ -99,10 +99,12 @@ module "ses" {
 }
 
 module "cloudwatch" {
-  source        = "../../modules/cloudwatch"
-  cluster_name  = var.cluster_name
-  sqs_dlq_name  = module.sqs.dlq_name
-  sns_topic_arn = module.lambda.alerts_topic_arn
+  source                  = "../../modules/cloudwatch"
+  cluster_name            = var.cluster_name
+  sqs_dlq_name            = module.sqs.dlq_name
+  sns_topic_arn           = module.lambda.alerts_topic_arn
+  rds_instance_identifier = module.rds.identifier
+  sqs_queue_name          = module.sqs.queue_name
 }
 
 module "lambda" {
