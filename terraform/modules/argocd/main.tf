@@ -41,7 +41,7 @@ resource "helm_release" "argocd" {
 
   # Wait until all ArgoCD pods are running before Terraform continues
   wait    = true
-  timeout = 600  # 10 minutes
+  timeout = 600 # 10 minutes
 
   depends_on = [kubernetes_namespace.argocd]
 }
@@ -63,7 +63,7 @@ resource "helm_release" "caresync_app" {
   values = [
     <<-EOT
     applications:
-      - name: caresync-dev
+      - name: ${var.cluster_name}
         namespace: argocd
         finalizers:
           - resources-finalizer.argocd.argoproj.io
@@ -81,7 +81,7 @@ resource "helm_release" "caresync_app" {
                 value: "${data.aws_caller_identity.current.account_id}"
         destination:
           server: https://kubernetes.default.svc
-          namespace: caresync-dev
+          namespace: ${var.cluster_name}
         syncPolicy:
           automated:
             prune: true

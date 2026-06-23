@@ -46,12 +46,12 @@ data "aws_iam_policy_document" "eso_assume" {
     condition {
       test     = "StringEquals"
       variable = "${replace(var.oidc_provider_url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:caresync-dev:external-secrets-sa"]
+      values   = ["system:serviceaccount:${var.cluster_name}:external-secrets-sa"]
     }
   }
 }
 resource "aws_iam_role" "eso" {
-  name = "${var.cluster_name}-eso-role"
+  name               = "${var.cluster_name}-eso-role"
   assume_role_policy = data.aws_iam_policy_document.eso_assume.json
 }
 resource "aws_iam_role_policy" "eso_policy" {
@@ -71,9 +71,9 @@ resource "aws_iam_role" "ai_service" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow", Action = "sts:AssumeRoleWithWebIdentity"
+      Effect    = "Allow", Action = "sts:AssumeRoleWithWebIdentity"
       Principal = { Federated = var.oidc_provider_arn }
-      Condition = { StringEquals = { "${replace(var.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:caresync-dev:ai-service-sa" } }
+      Condition = { StringEquals = { "${replace(var.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:${var.cluster_name}:ai-service-sa" } }
     }]
   })
 }
@@ -96,9 +96,9 @@ resource "aws_iam_role" "doc_service" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow", Action = "sts:AssumeRoleWithWebIdentity"
+      Effect    = "Allow", Action = "sts:AssumeRoleWithWebIdentity"
       Principal = { Federated = var.oidc_provider_arn }
-      Condition = { StringEquals = { "${replace(var.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:caresync-dev:document-service-sa" } }
+      Condition = { StringEquals = { "${replace(var.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:${var.cluster_name}:document-service-sa" } }
     }]
   })
 }

@@ -2,7 +2,7 @@ locals {
   repos = ["auth-service", "user-service", "appointment-service", "document-service", "notification-service", "ai-service", "frontend"]
 }
 resource "aws_ecr_repository" "repos" {
-  for_each = toset(local.repos)
+  for_each             = toset(local.repos)
   name                 = "caresync/${each.key}"
   image_tag_mutability = "MUTABLE"
   force_delete         = true

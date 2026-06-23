@@ -19,10 +19,10 @@ terraform {
     }
   }
   backend "s3" {
-    bucket   = "caresync-dev-tfstate-664685894054"
-    key      = "dev/terraform.tfstate"
-    region   = "us-east-1"
-    encrypt  = true
+    bucket       = "caresync-dev-tfstate-664685894054"
+    key          = "dev/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
     use_lockfile = true
   }
 }

@@ -2,7 +2,7 @@ module "vpc" {
   source       = "../../modules/vpc"
   vpc_cidr     = var.vpc_cidr
   cluster_name = var.cluster_name
-  single_nat   = true
+  single_nat   = var.single_nat
 }
 
 module "security-groups" {
@@ -11,55 +11,58 @@ module "security-groups" {
 }
 
 module "kms" {
-  source = "../../modules/kms"
+  source       = "../../modules/kms"
+  project_name = var.project_name
+  environment  = var.environment
 }
 
 module "s3" {
-  source = "../../modules/s3"
-  bucket_prefix = "caresync-docs-dev-"
+  source        = "../../modules/s3"
+  bucket_prefix = var.s3_bucket_prefix
   kms_key_arn   = module.kms.key_arn
 }
 
 module "sqs" {
-  source = "../../modules/sqs"
-  kms_key_arn = module.kms.key_arn
+  source       = "../../modules/sqs"
+  kms_key_arn  = module.kms.key_arn
+  cluster_name = var.cluster_name
 }
 
 module "rds" {
-  source              = "../../modules/rds"
-  vpc_id              = module.vpc.vpc_id
-  subnet_ids          = module.vpc.database_subnets
-  security_group_id   = module.security-groups.rds_sg_id
-  db_name             = "caresync_dev"
-  db_username         = var.db_username
-  multi_az            = false
-  kms_key_arn         = module.kms.key_arn
+  source            = "../../modules/rds"
+  vpc_id            = module.vpc.vpc_id
+  subnet_ids        = module.vpc.database_subnets
+  security_group_id = module.security-groups.rds_sg_id
+  db_name           = var.db_name
+  db_username       = var.db_username
+  multi_az          = var.multi_az
+  kms_key_arn       = module.kms.key_arn
 }
 
 module "route53" {
   source       = "../../modules/route53"
-  domain_name  = "caresync-project.online"
-  project_name = "CareSync"
-  environment  = "dev"
+  domain_name  = var.domain_name
+  project_name = var.project_name
+  environment  = var.environment
 }
 
 module "acm" {
   source       = "../../modules/acm"
-  domain_name  = "caresync-project.online"
+  domain_name  = var.domain_name
   zone_id      = module.route53.zone_id
-  project_name = "CareSync"
-  environment  = "dev"
+  project_name = var.project_name
+  environment  = var.environment
 }
 
 module "secrets-manager" {
   source             = "../../modules/secrets-manager"
-  environment        = "dev"
+  environment        = var.environment
   kms_key_arn        = module.kms.key_arn
-  database_url       = "postgresql://${var.db_username}:${module.rds.db_password}@${module.rds.endpoint}/caresync_dev"
+  database_url       = "postgresql://${var.db_username}:${module.rds.db_password}@${module.rds.endpoint}/${var.db_name}"
   sqs_queue_url      = module.sqs.queue_url
   s3_bucket_name     = module.s3.bucket_name
-  frontend_url       = "https://caresync-project.online"
-  api_base_url       = "https://caresync-project.online/api"
+  frontend_url       = "https://${var.domain_name}"
+  api_base_url       = "https://${var.domain_name}/api"
   ses_from_email     = var.ses_from_email
   notification_email = var.notification_email
 }
@@ -76,26 +79,26 @@ module "eks" {
   cluster_sg_id      = module.security-groups.eks_cluster_sg_id
   node_sg_id         = module.security-groups.eks_node_sg_id
   kms_key_arn        = module.kms.key_arn
-  node_instance_type = "t3.medium"
-  node_min_size      = 2
-  node_max_size      = 3
-  node_desired_size  = 3
+  node_instance_type = var.node_instance_type
+  node_min_size      = var.node_min_size
+  node_max_size      = var.node_max_size
+  node_desired_size  = var.node_desired_size
 }
 
 module "iam-irsa" {
-  source          = "../../modules/iam-irsa"
-  cluster_name    = var.cluster_name
+  source            = "../../modules/iam-irsa"
+  cluster_name      = var.cluster_name
   oidc_provider_arn = module.eks.oidc_provider_arn
   oidc_provider_url = module.eks.oidc_provider_url
-  s3_bucket_arn   = module.s3.bucket_arn
-  sqs_queue_arn   = module.sqs.queue_arn
-  kms_key_arn     = module.kms.key_arn
-  secret_arn      = module.secrets-manager.secret_arn
+  s3_bucket_arn     = module.s3.bucket_arn
+  sqs_queue_arn     = module.sqs.queue_arn
+  kms_key_arn       = module.kms.key_arn
+  secret_arn        = module.secrets-manager.secret_arn
 }
 
 module "ses" {
-  source       = "../../modules/ses"
-  from_email   = var.ses_from_email
+  source     = "../../modules/ses"
+  from_email = var.ses_from_email
 }
 
 module "cloudwatch" {
@@ -116,7 +119,8 @@ module "lambda" {
   secret_arn         = module.secrets-manager.secret_arn
   ses_from_email     = var.ses_from_email
   notification_email = var.notification_email
-  reminder_schedule  = "rate(1 hour)"
+  reminder_schedule  = var.reminder_schedule
+  cluster_name       = var.cluster_name
 }
 
 # ===========================================================================
@@ -154,15 +158,16 @@ resource "null_resource" "install_crds" {
 
 module "argocd" {
   source          = "../../modules/argocd"
-  gitops_repo_url = "https://github.com/care-sync-org/caresync-gitops.git"
-  gitops_branch   = "dev"
+  gitops_repo_url = var.gitops_repo_url
+  gitops_branch   = var.gitops_branch
+  cluster_name    = var.cluster_name
 
   depends_on = [time_sleep.wait_for_kubernetes, module.alb-controller, null_resource.install_crds]
 }
 
 module "external-dns" {
   source                = "../../modules/external-dns"
-  domain_filters        = ["caresync-project.online"]
+  domain_filters        = [var.domain_name]
   external_dns_role_arn = module.iam-irsa.role_arns["external_dns"]
   cluster_name          = var.cluster_name
 
@@ -190,11 +195,11 @@ resource "helm_release" "external_secrets" {
 }
 
 resource "helm_release" "metrics_server" {
-  name             = "metrics-server"
-  repository       = "https://kubernetes-sigs.github.io/metrics-server/"
-  chart            = "metrics-server"
-  namespace        = "kube-system"
-  version          = "3.12.1"
+  name       = "metrics-server"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart      = "metrics-server"
+  namespace  = "kube-system"
+  version    = "3.12.1"
 
   set {
     name  = "args[0]"

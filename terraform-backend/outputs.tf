@@ -37,7 +37,7 @@ output "backend_config_snippet" {
     Copy this backend block into terraform/versions.tf of the main CareSync project.
     Run 'terraform init -migrate-state' in the main project directory after adding it.
   EOT
-  value = <<-BACKEND
+  value       = <<-BACKEND
     # Add this backend block to terraform/versions.tf in the main project:
 
     terraform {

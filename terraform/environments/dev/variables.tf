@@ -1,22 +1,61 @@
 variable "aws_region" {
-  type    = string
-  default = "us-east-1"
+  type = string
 }
 variable "vpc_cidr" {
-  type    = string
-  default = "10.0.0.0/16"
+  type = string
 }
 variable "cluster_name" {
-  type    = string
-  default = "caresync-dev"
+  type = string
 }
 variable "db_username" {
-  type    = string
-  default = "postgres"
+  type = string
 }
 variable "notification_email" {
-  type    = string
+  type = string
 }
 variable "ses_from_email" {
-  type    = string
+  type = string
+}
+
+variable "project_name" {
+  type = string
+}
+variable "environment" {
+  type = string
+}
+variable "domain_name" {
+  type = string
+}
+variable "db_name" {
+  type = string
+}
+variable "s3_bucket_prefix" {
+  type = string
+}
+variable "node_instance_type" {
+  type = string
+}
+variable "node_min_size" {
+  type = number
+}
+variable "node_max_size" {
+  type = number
+}
+variable "node_desired_size" {
+  type = number
+}
+variable "single_nat" {
+  type = bool
+}
+variable "multi_az" {
+  type = bool
+}
+variable "reminder_schedule" {
+  type = string
+}
+variable "gitops_repo_url" {
+  type = string
+}
+variable "gitops_branch" {
+  type = string
 }

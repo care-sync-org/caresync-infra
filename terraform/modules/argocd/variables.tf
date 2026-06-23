@@ -11,3 +11,7 @@ variable "argocd_version" {
   type    = string
   default = "7.3.11"
 }
+
+variable "cluster_name" {
+  type = string
+}

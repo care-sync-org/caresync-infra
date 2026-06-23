@@ -1,5 +1,5 @@
 resource "aws_sns_topic" "alerts" {
-  name = "caresync-alerts"
+  name = "${var.cluster_name}-alerts"
 }
 resource "null_resource" "email" {
   triggers = {
@@ -12,7 +12,7 @@ resource "null_resource" "email" {
   }
 }
 resource "aws_iam_role" "lambda_exec" {
-  name = "caresync-reminder-lambda-role"
+  name = "${var.cluster_name}-reminder-lambda-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17", Statement = [{ Action = "sts:AssumeRole", Principal = { Service = "lambda.amazonaws.com" }, Effect = "Allow" }]
   })
@@ -38,7 +38,7 @@ data "archive_file" "lambda_zip" {
 }
 
 resource "aws_lambda_function" "appointment_reminder" {
-  function_name    = "caresync-appointment-reminder"
+  function_name    = "${var.cluster_name}-appointment-reminder"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "index.handler"
   runtime          = "nodejs20.x"
@@ -61,7 +61,7 @@ resource "aws_lambda_function" "appointment_reminder" {
 }
 
 resource "aws_cloudwatch_event_rule" "reminder_schedule" {
-  name                = "caresync-reminder-schedule"
+  name                = "${var.cluster_name}-reminder-schedule"
   description         = "Trigger the appointment reminder lambda"
   schedule_expression = var.reminder_schedule
 }
