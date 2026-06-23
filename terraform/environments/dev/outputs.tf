@@ -24,3 +24,7 @@ output "route53_nameservers" {
   description = "Copy these 4 nameservers into GoDaddy to delegate DNS to AWS Route53"
   value       = module.route53.name_servers
 }
+
+output "waf_acl_arn" {
+  value = module.waf.web_acl_arn
+}

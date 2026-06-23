@@ -225,3 +225,9 @@ resource "helm_release" "kgateway" {
 
   depends_on = [helm_release.kgateway_crds, module.alb-controller]
 }
+
+module "waf" {
+  source       = "../../modules/waf"
+  project_name = var.project_name
+  environment  = var.environment
+}
