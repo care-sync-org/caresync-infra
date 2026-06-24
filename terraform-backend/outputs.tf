@@ -43,7 +43,7 @@ output "backend_config_snippet" {
     terraform {
       backend "s3" {
         bucket         = "${aws_s3_bucket.tfstate.id}"
-        key            = "caresync/dev/terraform.tfstate"
+        key            = "caresync/prod/terraform.tfstate"
         region         = "${aws_s3_bucket.tfstate.region}"
         dynamodb_table = "${aws_dynamodb_table.tf_locks.id}"
         encrypt        = true

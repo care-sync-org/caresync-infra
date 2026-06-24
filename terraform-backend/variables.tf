@@ -17,7 +17,7 @@ variable "project_name" {
 variable "environment" {
   description = "Environment name — must match the main CareSync Terraform project (dev / staging / prod)"
   type        = string
-  default     = "dev"
+  default     = "prod"
 }
 
 variable "aws_account_id" {

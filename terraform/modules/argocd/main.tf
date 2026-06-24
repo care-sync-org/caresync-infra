@@ -75,7 +75,7 @@ resource "helm_release" "caresync_app" {
           helm:
             valueFiles:
               - values.yaml
-              - values-dev.yaml
+              - values-prod.yaml
             parameters:
               - name: awsAccountId
                 value: "${data.aws_caller_identity.current.account_id}"

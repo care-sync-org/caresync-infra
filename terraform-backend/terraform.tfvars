@@ -1,6 +1,6 @@
 aws_region     = "us-east-1"
 project_name   = "caresync"
-environment    = "dev"
+environment    = "prod"
 aws_account_id = "664685894054"
 
 # How long to keep old (noncurrent) state file versions before auto-deleting.
