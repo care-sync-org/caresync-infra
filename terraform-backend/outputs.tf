@@ -37,13 +37,13 @@ output "backend_config_snippet" {
     Copy this backend block into terraform/versions.tf of the main CareSync project.
     Run 'terraform init -migrate-state' in the main project directory after adding it.
   EOT
-  value = <<-BACKEND
+  value       = <<-BACKEND
     # Add this backend block to terraform/versions.tf in the main project:
 
     terraform {
       backend "s3" {
         bucket         = "${aws_s3_bucket.tfstate.id}"
-        key            = "caresync/dev/terraform.tfstate"
+        key            = "caresync/prod/terraform.tfstate"
         region         = "${aws_s3_bucket.tfstate.region}"
         dynamodb_table = "${aws_dynamodb_table.tf_locks.id}"
         encrypt        = true

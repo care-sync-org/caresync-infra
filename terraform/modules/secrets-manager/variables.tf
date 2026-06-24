@@ -6,3 +6,4 @@ variable "frontend_url" {}
 variable "api_base_url" {}
 variable "ses_from_email" {}
 variable "notification_email" {}
+variable "environment" { default = "dev" }

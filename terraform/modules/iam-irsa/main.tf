@@ -1,4 +1,11 @@
 
+
+locals {
+  # Strip the random 6-char suffix AWS appends to secret ARNs and replace with wildcard
+  # This ensures the policy works on every terraform destroy+apply cycle
+  secret_arn_wildcard = "${join("-", slice(split("-", var.secret_arn), 0, length(split("-", var.secret_arn)) - 1))}-*"
+}
+
 data "aws_iam_policy_document" "assume_role_policy" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -39,12 +46,12 @@ data "aws_iam_policy_document" "eso_assume" {
     condition {
       test     = "StringEquals"
       variable = "${replace(var.oidc_provider_url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:caresync-dev:external-secrets-sa"]
+      values   = ["system:serviceaccount:${var.cluster_name}:external-secrets-sa"]
     }
   }
 }
 resource "aws_iam_role" "eso" {
-  name = "${var.cluster_name}-eso-role"
+  name               = "${var.cluster_name}-eso-role"
   assume_role_policy = data.aws_iam_policy_document.eso_assume.json
 }
 resource "aws_iam_role_policy" "eso_policy" {
@@ -52,7 +59,7 @@ resource "aws_iam_role_policy" "eso_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      { Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = var.secret_arn },
+      { Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = local.secret_arn_wildcard },
       { Effect = "Allow", Action = ["kms:Decrypt"], Resource = var.kms_key_arn }
     ]
   })
@@ -64,9 +71,9 @@ resource "aws_iam_role" "ai_service" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow", Action = "sts:AssumeRoleWithWebIdentity"
+      Effect    = "Allow", Action = "sts:AssumeRoleWithWebIdentity"
       Principal = { Federated = var.oidc_provider_arn }
-      Condition = { StringEquals = { "${replace(var.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:caresync-dev:ai-service-sa" } }
+      Condition = { StringEquals = { "${replace(var.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:${var.cluster_name}:ai-service-sa" } }
     }]
   })
 }
@@ -89,9 +96,9 @@ resource "aws_iam_role" "doc_service" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow", Action = "sts:AssumeRoleWithWebIdentity"
+      Effect    = "Allow", Action = "sts:AssumeRoleWithWebIdentity"
       Principal = { Federated = var.oidc_provider_arn }
-      Condition = { StringEquals = { "${replace(var.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:caresync-dev:document-service-sa" } }
+      Condition = { StringEquals = { "${replace(var.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:${var.cluster_name}:document-service-sa" } }
     }]
   })
 }
@@ -106,4 +113,36 @@ resource "aws_iam_role_policy" "doc_service_policy" {
       { Effect = "Allow", Action = ["kms:GenerateDataKey", "kms:Decrypt"], Resource = var.kms_key_arn }
     ]
   })
+}
+
+# External DNS Role
+data "aws_iam_policy_document" "external_dns_assume" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [var.oidc_provider_arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${replace(var.oidc_provider_url, "https://", "")}:sub"
+      values   = ["system:serviceaccount:kube-system:external-dns"]
+    }
+  }
+}
+
+resource "aws_iam_role" "external_dns" {
+  name               = "${var.cluster_name}-external-dns-role"
+  assume_role_policy = data.aws_iam_policy_document.external_dns_assume.json
+}
+
+resource "aws_iam_policy" "external_dns_policy" {
+  name        = "${var.cluster_name}-external-dns-policy"
+  description = "IAM policy for External DNS"
+  policy      = file("${path.module}/policies/external_dns_policy.json")
+}
+
+resource "aws_iam_role_policy_attachment" "external_dns_attach" {
+  role       = aws_iam_role.external_dns.name
+  policy_arn = aws_iam_policy.external_dns_policy.arn
 }

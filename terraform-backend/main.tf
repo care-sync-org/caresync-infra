@@ -118,12 +118,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate" {
 
 resource "aws_dynamodb_table" "tf_locks" {
   name         = local.table_name
-  billing_mode = "PAY_PER_REQUEST"  # No capacity planning — auto-scales
+  billing_mode = "PAY_PER_REQUEST" # No capacity planning — auto-scales
   hash_key     = "LockID"
 
   attribute {
     name = "LockID"
-    type = "S"  # String — as required by Terraform's S3 backend
+    type = "S" # String — as required by Terraform's S3 backend
   }
 
   # Point-in-time recovery — allows table restoration to any point in

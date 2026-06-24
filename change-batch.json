@@ -1,0 +1,30 @@
+{
+  "Comment": "Delete orphaned external-dns records",
+  "Changes": [
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "caresync-project.online.",
+        "Type": "A",
+        "AliasTarget": {
+            "HostedZoneId": "Z35SXDOTRQ7X7K",
+            "DNSName": "k8s-caresync-gatewaya-6a944ac1c1-222576098.us-east-1.elb.amazonaws.com.",
+            "EvaluateTargetHealth": true
+        }
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "caresync-project.online.",
+        "Type": "TXT",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "\"heritage=external-dns,external-dns/owner=caresync-dev,external-dns/resource=ingress/caresync-dev/gateway-alb-ingress\""
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,13 +1,18 @@
 resource "aws_sns_topic" "alerts" {
-  name = "caresync-alerts"
+  name = "${var.cluster_name}-alerts"
 }
-resource "aws_sns_topic_subscription" "email" {
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "email"
-  endpoint  = var.notification_email
+resource "null_resource" "email" {
+  triggers = {
+    endpoint  = var.notification_email
+    topic_arn = aws_sns_topic.alerts.arn
+  }
+
+  provisioner "local-exec" {
+    command = "aws sns subscribe --topic-arn ${aws_sns_topic.alerts.arn} --protocol email --notification-endpoint ${var.notification_email}"
+  }
 }
 resource "aws_iam_role" "lambda_exec" {
-  name = "caresync-reminder-lambda-role"
+  name = "${var.cluster_name}-reminder-lambda-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17", Statement = [{ Action = "sts:AssumeRole", Principal = { Service = "lambda.amazonaws.com" }, Effect = "Allow" }]
   })
@@ -22,18 +27,31 @@ resource "aws_iam_role_policy" "lambda_policy" {
     Version = "2012-10-17",
     Statement = [
       { Effect = "Allow", Action = "secretsmanager:GetSecretValue", Resource = var.secret_arn },
+      { Effect = "Allow", Action = "kms:Decrypt", Resource = var.kms_key_arn },
       { Effect = "Allow", Action = "ses:SendEmail", Resource = "*" }
     ]
   })
 }
+resource "null_resource" "npm_install" {
+  triggers = {
+    package_json = filemd5("${path.module}/functions/appointment-reminder/package.json")
+  }
+
+  provisioner "local-exec" {
+    command     = "npm install"
+    working_dir = "${path.module}/functions/appointment-reminder"
+  }
+}
+
 data "archive_file" "lambda_zip" {
+  depends_on  = [null_resource.npm_install]
   type        = "zip"
   source_dir  = "${path.module}/functions/appointment-reminder"
   output_path = "${path.module}/functions/appointment-reminder.zip"
 }
 
 resource "aws_lambda_function" "appointment_reminder" {
-  function_name    = "caresync-appointment-reminder"
+  function_name    = "${var.cluster_name}-appointment-reminder"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "index.handler"
   runtime          = "nodejs20.x"
@@ -53,4 +71,24 @@ resource "aws_lambda_function" "appointment_reminder" {
       SES_FROM_EMAIL = var.ses_from_email
     }
   }
+}
+
+resource "aws_cloudwatch_event_rule" "reminder_schedule" {
+  name                = "${var.cluster_name}-reminder-schedule"
+  description         = "Trigger the appointment reminder lambda"
+  schedule_expression = var.reminder_schedule
+}
+
+resource "aws_cloudwatch_event_target" "reminder_target" {
+  rule      = aws_cloudwatch_event_rule.reminder_schedule.name
+  target_id = "appointment-reminder-lambda"
+  arn       = aws_lambda_function.appointment_reminder.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.appointment_reminder.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.reminder_schedule.arn
 }

@@ -1,7 +1,7 @@
 resource "aws_wafv2_web_acl" "main" {
   name        = "${var.project_name}-${var.environment}-waf"
   description = "WAF for CloudFront"
-  scope       = "CLOUDFRONT"
+  scope       = "REGIONAL"
 
   default_action {
     allow {}

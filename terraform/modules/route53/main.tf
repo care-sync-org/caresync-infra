@@ -1,0 +1,19 @@
+# Route53 Hosted Zone ONLY
+# All DNS records are created in main.tf or acm module
+# This avoids circular dependencies
+
+resource "aws_route53_zone" "main" {
+  name    = var.domain_name
+  comment = "${var.project_name} ${var.environment} hosted zone - managed by Terraform"
+
+  lifecycle {
+    prevent_destroy = false
+  }
+
+  tags = {
+    Name        = "${var.project_name}-hosted-zone"
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}

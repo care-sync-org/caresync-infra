@@ -1,7 +1,42 @@
-variable "vpc_id" {}
-variable "subnet_ids" {}
-variable "security_group_id" {}
-variable "secret_name" {}
-variable "secret_arn" {}
-variable "ses_from_email" {}
-variable "notification_email" {}
+variable "vpc_id" {
+  type = string
+}
+
+variable "subnet_ids" {
+  type = list(string)
+}
+
+variable "security_group_id" {
+  type = string
+}
+
+variable "secret_name" {
+  type = string
+}
+
+variable "secret_arn" {
+  type = string
+}
+
+variable "ses_from_email" {
+  type = string
+}
+
+variable "notification_email" {
+  type = string
+}
+
+variable "reminder_schedule" {
+  description = "EventBridge cron expression for the reminder lambda"
+  type        = string
+}
+
+variable "cluster_name" {
+  description = "Cluster name used as a prefix for resource naming"
+  type        = string
+}
+
+variable "kms_key_arn" {
+  description = "ARN of the KMS key used to encrypt Secrets Manager"
+  type        = string
+}
