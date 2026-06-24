@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "caresync-dev-tfstate-664685894054"
+  bucket = "caresync-prod-tfstate-664685894054"
 }
 
 resource "aws_s3_bucket_versioning" "terraform_state" {
@@ -24,7 +24,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" 
 }
 
 resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "caresync-dev-tf-lock"
+  name         = "caresync-prod-tf-lock"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
