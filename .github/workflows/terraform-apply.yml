@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: terraform/tfplan
+          path: terraform/environments/prod/tfplan
 
   apply:
     name: "Terraform Apply"
@@ -53,7 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     # This environment name is critical. It forces the manual approval gate in GitHub.
     environment: aws-infrastructure
-    if: github.event_name == 'push'
     defaults:
       run:
         working-directory: terraform/environments/prod
@@ -78,7 +77,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan
-          path: terraform
+          path: terraform/environments/prod
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
