@@ -5,7 +5,7 @@
 #   1. S3 bucket  — stores terraform.tfstate files
 #   2. DynamoDB   — provides state locking and consistency checking
 #
-# S3 Bucket Name: caresync-dev-tfstate-<account-id>
+# S3 Bucket Name: caresync-prod-tfstate-<account-id>
 #   S3 bucket names are globally unique across all AWS accounts. Appending
 #   the account ID makes the name deterministically unique and reproducible
 #   without random suffixes.
