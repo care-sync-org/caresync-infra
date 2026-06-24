@@ -12,6 +12,22 @@ module "eks" {
   enable_irsa                              = true
   cluster_endpoint_public_access           = true
   enable_cluster_creator_admin_permissions = true
+
+  access_entries = {
+    local_admin = {
+      kubernetes_groups = []
+      principal_arn     = "arn:aws:iam::664685894054:user/nandana"
+      
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+  }
   eks_managed_node_groups = {
     main = {
       ami_type               = "AL2023_x86_64_STANDARD"
