@@ -3,4 +3,5 @@
 *.tfstate.backup
 tfplan
 *.zip
+!terraform/modules/lambda/functions/*.zip
 *.exe
