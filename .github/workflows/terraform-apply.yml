@@ -65,6 +65,9 @@ jobs:
           name: terraform-workspace
           path: terraform/
 
+      - name: Fix Provider Permissions
+        run: chmod -R +x .terraform/
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
