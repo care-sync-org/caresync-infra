@@ -41,12 +41,13 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -no-color -out=tfplan
 
-      - name: Upload Terraform Workspace
+      - name: Upload Terraform Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-workspace
-          path: terraform/
-          include-hidden-files: true
+          name: terraform-artifacts
+          path: |
+            terraform/environments/prod/tfplan
+            terraform/modules/lambda/functions/appointment-reminder.zip
 
   apply:
     name: "Terraform Apply"
@@ -59,14 +60,8 @@ jobs:
         working-directory: terraform/environments/prod
     
     steps:
-      - name: Download Terraform Workspace
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-workspace
-          path: terraform/
-
-      - name: Fix Provider Permissions
-        run: chmod -R +x .terraform/
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -76,6 +71,15 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Download Terraform Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-artifacts
+          path: terraform/
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
