@@ -65,5 +65,8 @@ jobs:
           name: terraform-workspace
           path: terraform/
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
