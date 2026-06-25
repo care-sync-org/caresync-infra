@@ -41,11 +41,12 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -no-color -out=tfplan
 
-      - name: Upload Terraform Plan
+      - name: Upload Terraform Workspace
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan
-          path: terraform/environments/prod/tfplan
+          name: terraform-workspace
+          path: terraform/
+          include-hidden-files: true
 
   apply:
     name: "Terraform Apply"
@@ -58,26 +59,11 @@ jobs:
         working-directory: terraform/environments/prod
     
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Download Terraform Plan
+      - name: Download Terraform Workspace
         uses: actions/download-artifact@v4
         with:
-          name: tfplan
-          path: terraform/environments/prod
+          name: terraform-workspace
+          path: terraform/
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
