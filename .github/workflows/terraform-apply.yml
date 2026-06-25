@@ -41,13 +41,11 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -no-color -out=tfplan
 
-      - name: Upload Terraform Artifacts
+      - name: Upload Terraform Plan Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-artifacts
-          path: |
-            terraform/environments/prod/tfplan
-            terraform/modules/lambda/functions/appointment-reminder.zip
+          name: tfplan
+          path: terraform/environments/prod/tfplan
 
   apply:
     name: "Terraform Apply"
@@ -75,11 +73,14 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Download Terraform Artifacts
+      - name: Download Terraform Plan Artifact
         uses: actions/download-artifact@v4
         with:
-          name: terraform-artifacts
-          path: terraform/
+          name: tfplan
+          path: terraform/environments/prod
+
+      - name: Fix Provider Permissions (Failsafe)
+        run: chmod -R +x .terraform/providers/ || true
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
