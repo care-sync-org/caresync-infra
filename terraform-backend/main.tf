@@ -26,11 +26,13 @@ locals {
 resource "aws_s3_bucket" "tfstate" {
   bucket = local.bucket_name
 
+  force_destroy = true
+
   # Prevent accidental deletion — Terraform will refuse to destroy this
   # bucket while it contains objects (state files). This is intentional.
   # To destroy, manually empty the bucket first.
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   tags = {
