@@ -5,3 +5,4 @@ tfplan
 *.zip
 !terraform/modules/lambda/functions/*.zip
 *.exe
+**/node_modules/
